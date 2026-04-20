@@ -5,24 +5,18 @@ Infrastructure / Authentication analyzers:
 - Sender domain WHOIS
 - Typosquatting link detection
 - Legitimate service abuse
-- VirusTotal evaluation
 - Double extension detection
 - URL analysis (dots, @, subdomains, length, entropy)
 """
 
 import re
-import os
 import math
-import socket
 import logging
-import hashlib
-import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
 import dns.resolver
-import requests
 from Levenshtein import distance as levenshtein_distance
 
 logger = logging.getLogger(__name__)
@@ -293,75 +287,7 @@ def check_legit_service_abuse(url_domains: list[str]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 6. VirusTotal Evaluation
-# ---------------------------------------------------------------------------
-
-VT_API_KEY = os.environ.get("VT_API_KEY", "")
-VT_RATE_LIMIT_DELAY = 15  # seconds between requests (4/min free tier)
-
-
-def check_virustotal(urls: list[str], max_urls: int = 5) -> dict:
-    """Submit URLs to VirusTotal and return scan verdicts."""
-    result = {
-        "available": bool(VT_API_KEY),
-        "scanned": [],
-        "total_malicious": 0,
-        "total_suspicious": 0,
-    }
-
-    if not VT_API_KEY:
-        result["error"] = "VT_API_KEY not set"
-        return result
-
-    headers = {"x-apikey": VT_API_KEY}
-
-    for url in urls[:max_urls]:
-        try:
-            # URL ID is base64url of the URL
-            url_id = hashlib.sha256(url.encode()).hexdigest()
-
-            # Try to get existing report first
-            resp = requests.get(
-                f"https://www.virustotal.com/api/v3/urls/{url_id}",
-                headers=headers,
-                timeout=10,
-            )
-
-            if resp.status_code == 404:
-                # Submit for scanning
-                resp = requests.post(
-                    "https://www.virustotal.com/api/v3/urls",
-                    headers=headers,
-                    data={"url": url},
-                    timeout=10,
-                )
-                time.sleep(VT_RATE_LIMIT_DELAY)
-                continue
-
-            if resp.status_code == 200:
-                data = resp.json().get("data", {}).get("attributes", {})
-                stats = data.get("last_analysis_stats", {})
-                scan_result = {
-                    "url": url[:200],
-                    "malicious": stats.get("malicious", 0),
-                    "suspicious": stats.get("suspicious", 0),
-                    "harmless": stats.get("harmless", 0),
-                    "undetected": stats.get("undetected", 0),
-                }
-                result["scanned"].append(scan_result)
-                result["total_malicious"] += scan_result["malicious"]
-                result["total_suspicious"] += scan_result["suspicious"]
-
-            time.sleep(VT_RATE_LIMIT_DELAY)
-
-        except Exception as e:
-            logger.debug(f"VT error for {url[:80]}: {e}")
-
-    return result
-
-
-# ---------------------------------------------------------------------------
-# 7. Double Extension Detection
+# 6. Double Extension Detection
 # ---------------------------------------------------------------------------
 
 def check_double_extensions(attachments: list[dict]) -> dict:
@@ -395,7 +321,7 @@ def check_double_extensions(attachments: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 8. URL Analysis
+# 7. URL Analysis
 # ---------------------------------------------------------------------------
 
 def _shannon_entropy(text: str) -> float:
@@ -494,8 +420,6 @@ def run_infrastructure_checks(parsed_email, skip_whois: bool = False) -> dict:
     results["legit_service_abuse"] = check_legit_service_abuse(
         parsed_email.url_domains
     )
-
-    results["virustotal"] = check_virustotal(parsed_email.urls)
 
     results["double_extensions"] = check_double_extensions(
         parsed_email.attachments

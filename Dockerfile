@@ -1,4 +1,4 @@
-# EML Phishing Analysis Tool
+# EML Phishing Statistics Tool
 FROM python:3.11-slim
 
 # Install system dependencies
@@ -47,5 +47,7 @@ COPY data/ ./data/
 RUN mkdir -p /data/output
 
 # Entry point: analyze emails
+# Mount your email folder to /data/email and output folder to /data/output
+# Example: docker run -v /path/to/emails:/data/email -v /path/to/output:/data/output phishing-stats
 ENTRYPOINT ["python", "analyze.py"]
 CMD ["/data/email"]

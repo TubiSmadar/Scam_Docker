@@ -7,6 +7,5 @@ textstat>=0.7
 langdetect>=1.0
 pytesseract>=0.3
 pdfkit>=1.0
-requests>=2.31
 lxml>=4.9
 Pillow>=10.0
