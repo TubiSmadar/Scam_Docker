@@ -1,0 +1,12 @@
+beautifulsoup4>=4.12
+python-whois>=0.9
+dnspython>=2.4
+python-Levenshtein>=0.25
+symspellpy>=6.7
+textstat>=0.7
+langdetect>=1.0
+pytesseract>=0.3
+pdfkit>=1.0
+requests>=2.31
+lxml>=4.9
+Pillow>=10.0

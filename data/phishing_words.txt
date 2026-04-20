@@ -1,0 +1,289 @@
+# Phishing keyword dictionary
+# Sources: APWG reports, IEEE/ACM phishing detection literature,
+# CEAS challenge dataset analysis, Nazario corpus feature extraction
+# Categories follow the social engineering taxonomy from
+# Ferreira & Teles (2019) and Jakobsson (2016)
+
+# === Credential Harvesting ===
+verify
+confirm
+login
+log in
+sign in
+signin
+password
+credential
+credentials
+username
+user name
+authentication
+authenticate
+validate
+revalidate
+update your information
+confirm your identity
+verify your identity
+verify your account
+reset your password
+change your password
+update your password
+enter your password
+provide your password
+security question
+two-factor
+2fa
+one-time password
+otp
+pin code
+access code
+security code
+unlock
+reactivate
+
+# === Account Threats ===
+suspend
+suspended
+suspension
+unauthorized
+unusual
+compromised
+locked
+disabled
+restricted
+deactivated
+terminated
+closed
+will be closed
+will be suspended
+will be locked
+will be terminated
+has been compromised
+has been locked
+has been suspended
+has been disabled
+temporary hold
+temporary suspension
+security breach
+unauthorized access
+unauthorized transaction
+unusual activity
+unusual sign-in
+suspicious activity
+suspicious login
+
+# === Urgency / Pressure ===
+urgent
+urgently
+immediately
+immediate
+right away
+act now
+right now
+do not delay
+do not ignore
+respond immediately
+respond within
+failure to
+final warning
+final notice
+last chance
+last reminder
+before it's too late
+limited time
+time sensitive
+time-sensitive
+within 24 hours
+within 48 hours
+within 72 hours
+expires
+expire
+expiring
+expired
+expiration
+deadline
+overdue
+action required
+response required
+immediate action
+immediate attention
+required action
+required immediately
+
+# === Financial / Payment ===
+invoice
+receipt
+payment
+billing
+statement
+refund
+reimbursement
+wire transfer
+bank transfer
+western union
+moneygram
+money order
+routing number
+account number
+swift code
+iban
+ach transfer
+debit
+credit
+transaction
+outstanding
+overdue
+past due
+unpaid
+balance
+charge
+fee
+penalty
+fine
+
+# === Crypto / Digital Currency ===
+bitcoin
+btc
+ethereum
+eth
+cryptocurrency
+crypto wallet
+wallet address
+blockchain
+mining
+seed phrase
+private key
+
+# === Prize / Lottery Scams ===
+congratulations
+winner
+selected
+lucky
+lottery
+inheritance
+beneficiary
+prize
+reward
+gift
+bonus
+free
+won
+winning
+jackpot
+giveaway
+sweepstakes
+claim your
+redeem
+
+# === Call to Action ===
+click here
+click below
+click the link
+click the button
+click now
+click to
+update now
+update your
+verify now
+download the attachment
+open the attachment
+review your account
+secure your account
+submit your
+provide your
+enter your
+authorize your
+log in now
+login now
+sign in now
+
+# === Brand Impersonation Keywords ===
+customer service
+customer support
+help desk
+helpdesk
+technical support
+tech support
+security team
+security department
+security center
+account team
+billing department
+fraud department
+support team
+
+# === Tax / Government Scams ===
+tax
+irs
+revenue
+customs
+tax return
+tax refund
+tax payment
+tax filing
+social security
+ssn
+
+# === Delivery / Shipping Scams ===
+shipment
+delivery
+package
+tracking
+parcel
+courier
+customs clearance
+delivery attempt
+delivery failed
+delivery notification
+shipping confirmation
+tracking number
+
+# === Attachment Lures ===
+attached document
+attached file
+attached invoice
+see attached
+see the attached
+please review the attached
+please see attached
+enclosed document
+shared document
+shared file
+
+# === Data Collection ===
+personal information
+personal data
+date of birth
+social security
+credit card number
+card number
+cvv
+expiry date
+billing address
+mailing address
+phone number
+full name
+mother's maiden
+
+# === Multilingual (Portuguese — relevant to dataset) ===
+verificar
+confirmar
+atualizar
+atualização
+segurança
+conta
+senha
+cartão
+pontos
+resgate
+resgatar
+acesse
+clique aqui
+atualize agora
+expiram
+expiram hoje
+transferência
+pix
+boleto
+pagamento
+fatura
+saldo
