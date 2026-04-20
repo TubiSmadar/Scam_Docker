@@ -11,9 +11,12 @@
 │   └── metadata.py             # Metadata, brand impersonation, OCR, Ptech/Ptac
 ├── data/                       # Reference data files
 │   ├── english_freq.json       # English letter frequency distribution (chi-squared)
-│   ├── known_domains.txt       # 275 legitimate domains (typosquatting detection)
-│   ├── phishing_words.txt      # 289 phishing keywords (7 categories)
+│   ├── known_domains.txt       # Tranco Top 10K domains (downloaded at build time)
+│   ├── dangerous_extensions.json # badfiles extensions (downloaded at build time)
+│   ├── phishing_words.txt      # 526 phishing keywords (13 categories, multilingual)
 │   └── stopwords.txt           # 176 English stopwords (NLTK fallback)
+├── scripts/                    # Build-time scripts
+│   └── download_data.py        # Downloads Tranco + badfiles at Docker build
 ├── Dockerfile                  # Docker container configuration
 ├── .dockerignore               # Docker build exclusions
 ├── .gitignore                  # Git exclusions
@@ -85,12 +88,13 @@ Handles multipart emails, base64/quoted-printable decoding, and RFC 2047 encoded
 
 ### data/ — Reference Data
 
-| File                | Entries | Purpose                                            |
-|---------------------|---------|----------------------------------------------------|
-| `english_freq.json` | 26      | English letter frequencies for chi-squared test     |
-| `known_domains.txt` | 275     | Legitimate domains for typosquatting comparison     |
-| `phishing_words.txt`| 289     | Phishing keyword dictionary across 7 categories    |
-| `stopwords.txt`     | 176     | English stopwords (fallback if NLTK unavailable)   |
+| File                       | Source                                          | Purpose                                            |
+|----------------------------|-------------------------------------------------|----------------------------------------------------|
+| `english_freq.json`        | Standard English letter frequencies              | Chi-squared character distribution test             |
+| `known_domains.txt`        | [Tranco Top Sites](https://tranco-list.eu/)      | 10K legitimate domains for typosquatting detection  |
+| `dangerous_extensions.json`| [badfiles](https://github.com/dobin/badfiles)    | 100+ dangerous file extensions (MIT license)       |
+| `phishing_words.txt`       | APWG, Proofpoint, Cofense, Verizon DBIR          | 526 phishing keywords across 13 categories         |
+| `stopwords.txt`            | NLTK fallback                                    | 176 English stopwords                              |
 
 ## Data Flow
 

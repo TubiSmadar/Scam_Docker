@@ -75,28 +75,58 @@ ENGLISH_FREQ = _load_english_freq()
 # ---------------------------------------------------------------------------
 # Urgency keywords/phrases
 # ---------------------------------------------------------------------------
+# Sources: APWG eCrime reports, Proofpoint Human Factor Reports,
+# Cofense Annual Phishing Reports, Verizon DBIR social engineering data.
 URGENCY_PHRASES = [
+    # English
     "immediately", "urgent", "urgently", "act now", "right away",
     "your account will be suspended", "your account has been",
     "account will be closed", "account will be locked",
     "account has been compromised", "account has been locked",
     "account has been suspended", "expire", "expiring", "expired",
     "limited time", "time sensitive", "within 24 hours",
-    "within 48 hours", "do not delay", "respond immediately",
-    "failure to", "final warning", "final notice", "last chance",
-    "do not ignore", "action required", "immediate action",
+    "within 48 hours", "within 72 hours", "do not delay",
+    "respond immediately", "failure to", "final warning",
+    "final notice", "last chance", "do not ignore",
+    "action required", "immediate action", "immediate attention",
     "as soon as possible", "right now", "without delay",
-    "before it's too late", "este email expira",
-    "expiram hoje", "limited offer",
+    "before it's too late", "limited offer",
+    "required immediately", "response required",
+    "don't miss", "risk of losing", "risk of suspension",
+    "account at risk", "important update", "important notice",
+    "critical update", "mandatory update", "attention needed",
+    "attention required", "resolve immediately",
+    "must be completed", "must respond",
+    "only hours left", "only days left", "don't wait", "hurry",
+    "important security update", "critical security alert",
+    "requires your immediate", "will be permanently",
+    "will result in", "consequences if",
+    # Portuguese
+    "este email expira", "expiram hoje", "urgente",
+    "ação imediata", "atenção", "prazo final",
+    # Spanish
+    "acción inmediata", "aviso urgente", "plazo final",
+    # French
+    "action immédiate", "avis urgent", "délai final",
+    # German
+    "sofortige aktion", "dringend", "frist",
 ]
 
 ACTION_PHRASES = [
+    # English — click/tap
     "click here", "click below", "click the link",
-    "click the button", "update now", "update your",
+    "click the button", "click now", "click to",
+    "tap here", "tap below", "open link",
+    "follow the link", "use the link", "go to the",
+    "scan qr code", "scan the code", "open in browser",
+    # English — account actions
+    "update now", "update your", "verify now",
     "verify your account", "verify your identity",
-    "verify your information", "confirm your",
-    "reset your password", "log in now", "login now",
-    "sign in now", "sign in immediately",
+    "verify your information", "verify your email",
+    "confirm your", "confirm your identity",
+    "reset your password", "change your password",
+    "log in now", "login now", "sign in now",
+    "sign in immediately", "access now",
     "download the attachment", "open the attachment",
     "review your account", "secure your account",
     "reactivate your", "restore your",
@@ -106,10 +136,20 @@ ACTION_PHRASES = [
     "view the document", "view your", "access your",
     "access the", "get started", "proceed to",
     "activate your", "complete your", "manage your",
-    "go to the", "follow the link", "use the link",
-    "tap here", "tap below", "open link",
+    "review document", "view invoice",
+    "accept invitation", "join now",
+    "register now", "apply now", "continue to",
+    "download document", "preview document",
+    "connect your wallet", "approve transaction",
+    # Portuguese
     "clique aqui", "atualize agora", "resgate agora",
-    "resgatar agora", "acesse agora",
+    "resgatar agora", "acesse agora", "abra o documento",
+    # Spanish
+    "haga clic aquí", "actualice ahora", "acceda ahora",
+    # French
+    "cliquez ici", "mettez à jour", "accédez maintenant",
+    # German
+    "klicken sie hier", "jetzt aktualisieren", "jetzt zugreifen",
 ]
 
 FIRST_PERSON_PATTERN = re.compile(
@@ -125,12 +165,25 @@ BANK_ACCOUNT_PATTERN = re.compile(
     r"\b\d{8,17}\b"  # Generic bank account number pattern
 )
 FINANCIAL_KEYWORDS = [
+    # Wire/bank transfers
     "wire transfer", "bank transfer", "western union",
-    "moneygram", "bitcoin", "btc", "ethereum", "eth",
-    "cryptocurrency", "crypto wallet", "wallet address",
+    "moneygram", "money order", "direct deposit",
     "routing number", "account number", "swift code",
-    "iban", "ach transfer", "money order",
-    "transferência", "pix", "boleto",
+    "iban", "ach transfer", "sort code",
+    # Crypto
+    "bitcoin", "btc", "ethereum", "eth",
+    "cryptocurrency", "crypto wallet", "wallet address",
+    "seed phrase", "private key", "nft", "defi",
+    "airdrop", "staking", "metamask", "connect wallet",
+    # Payment platforms
+    "paypal", "venmo", "zelle", "cashapp", "cash app",
+    "stripe", "wise", "revolut", "google pay", "apple pay",
+    # Card info
+    "credit card", "debit card", "card number",
+    "cvv", "expiry date", "billing address",
+    # Multilingual
+    "transferência", "pix", "boleto", "virement",
+    "überweisung", "transferencia",
 ]
 
 

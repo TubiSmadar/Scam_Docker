@@ -38,10 +38,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Pre-download NLTK data (stopwords corpus + cmudict for textstat syllable counts)
 RUN python -c "import nltk; nltk.download('stopwords', quiet=True); nltk.download('cmudict', quiet=True, force=True)"
 
-# Copy the rest of the application
+# Copy the application
 COPY analyze.py .
 COPY analyzers/ ./analyzers/
 COPY data/ ./data/
+COPY scripts/ ./scripts/
+
+# Download open-source data at build time:
+#   - Tranco Top 10K domains (typosquatting detection)
+#   - badfiles dangerous extensions list
+# Falls back gracefully to bundled static files if download fails.
+RUN python scripts/download_data.py
 
 # Create output directory
 RUN mkdir -p /data/output

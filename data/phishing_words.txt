@@ -1,6 +1,10 @@
 # Phishing keyword dictionary
-# Sources: APWG reports, IEEE/ACM phishing detection literature,
-# CEAS challenge dataset analysis, Nazario corpus feature extraction
+# Sources: APWG Phishing Activity Trends Reports (2020-2024),
+# IEEE/ACM phishing detection literature, CEAS challenge dataset analysis,
+# Nazario corpus feature extraction, PhishTank category analysis,
+# Cloudflare 2023 Phishing Threats Report, Cofense Annual State of
+# Email Security, Proofpoint Human Factor Reports (2022-2024),
+# Verizon DBIR social engineering taxonomy.
 # Categories follow the social engineering taxonomy from
 # Ferreira & Teles (2019) and Jakobsson (2016)
 
@@ -39,6 +43,21 @@ access code
 security code
 unlock
 reactivate
+verification required
+verify your email
+confirm your email
+account verification
+identity verification
+multi-factor
+mfa
+passkey
+recovery code
+backup code
+session expired
+re-authenticate
+reauthenticate
+sign-in attempt
+sign in attempt
 
 # === Account Threats ===
 suspend
@@ -70,6 +89,22 @@ unusual activity
 unusual sign-in
 suspicious activity
 suspicious login
+account at risk
+account violation
+terms of service violation
+policy violation
+security alert
+security warning
+security incident
+account review
+account limitation
+permanently disabled
+access revoked
+privileges revoked
+unusual purchase
+unrecognized device
+new device login
+login from new location
 
 # === Urgency / Pressure ===
 urgent
@@ -108,6 +143,23 @@ immediate action
 immediate attention
 required action
 required immediately
+don't miss
+risk of losing
+risk of suspension
+account at risk
+important update
+important notice
+critical update
+mandatory update
+attention needed
+attention required
+resolve immediately
+must be completed
+must respond
+only hours left
+only days left
+don't wait
+hurry
 
 # === Financial / Payment ===
 invoice
@@ -139,6 +191,26 @@ charge
 fee
 penalty
 fine
+purchase
+direct deposit
+payroll
+compensation
+salary
+payment declined
+payment failed
+payment confirmation
+payment pending
+payment method
+update payment
+billing issue
+billing problem
+auto-renewal
+subscription renewal
+renewal notice
+chargeback
+disputed charge
+insufficient funds
+overdraft
 
 # === Crypto / Digital Currency ===
 bitcoin
@@ -152,6 +224,20 @@ blockchain
 mining
 seed phrase
 private key
+nft
+defi
+airdrop
+token swap
+staking reward
+gas fee
+smart contract
+decentralized
+yield farming
+liquidity pool
+crypto exchange
+wallet recovery
+connect your wallet
+approve transaction
 
 # === Prize / Lottery Scams ===
 congratulations
@@ -173,6 +259,18 @@ giveaway
 sweepstakes
 claim your
 redeem
+exclusive offer
+special promotion
+limited offer
+you have been chosen
+you have been selected
+unclaimed
+gift card
+voucher
+cashback
+loyalty points
+rewards points
+complimentary
 
 # === Call to Action ===
 click here
@@ -195,6 +293,29 @@ authorize your
 log in now
 login now
 sign in now
+access now
+get started
+proceed to
+activate your
+complete your
+manage your
+go to the
+follow the link
+use the link
+tap here
+tap below
+open link
+view document
+view invoice
+review document
+scan qr code
+scan the code
+open in browser
+continue to
+accept invitation
+join now
+register now
+apply now
 
 # === Brand Impersonation Keywords ===
 customer service
@@ -210,6 +331,16 @@ account team
 billing department
 fraud department
 support team
+abuse team
+compliance team
+risk department
+trust and safety
+account protection
+identity protection
+customer care
+service desk
+incident response
+fraud prevention
 
 # === Tax / Government Scams ===
 tax
@@ -222,6 +353,22 @@ tax payment
 tax filing
 social security
 ssn
+government
+federal
+stimulus
+stimulus check
+tax audit
+tax notice
+tax assessment
+census
+immigration
+visa
+passport
+driver license
+dmv
+court summons
+jury duty
+law enforcement
 
 # === Delivery / Shipping Scams ===
 shipment
@@ -236,6 +383,19 @@ delivery failed
 delivery notification
 shipping confirmation
 tracking number
+out for delivery
+held at customs
+delivery scheduled
+reschedule delivery
+address verification
+shipping label
+return shipment
+undeliverable
+held in warehouse
+customs duty
+import tax
+delivery fee
+redelivery
 
 # === Attachment Lures ===
 attached document
@@ -248,6 +408,20 @@ please see attached
 enclosed document
 shared document
 shared file
+fax document
+scanned document
+scanned copy
+signed document
+e-sign
+e-signature
+document ready
+file shared with you
+preview document
+download document
+voicemail
+voice message
+fax received
+fax notification
 
 # === Data Collection ===
 personal information
@@ -263,8 +437,71 @@ mailing address
 phone number
 full name
 mother's maiden
+bank details
+account details
+tax identification
+employer identification
+w2
+w-2
+1099
+insurance number
+passport number
+driver's license number
+national id
 
-# === Multilingual (Portuguese — relevant to dataset) ===
+# === Remote Access / Tech Support Scams ===
+remote access
+remote session
+screen sharing
+install software
+install update
+system update
+virus detected
+malware detected
+computer infected
+device compromised
+windows defender
+antivirus
+firewall
+allow access
+grant access
+remote desktop
+teamviewer
+anydesk
+tech support scam
+critical error
+system error
+
+# === Job / Employment Scams ===
+job offer
+job opportunity
+employment opportunity
+work from home
+remote position
+hiring
+recruiting
+application received
+interview scheduled
+offer letter
+background check
+direct hire
+salary advance
+equipment fee
+training fee
+onboarding
+
+# === Romance / Relationship Scams ===
+stranded
+emergency funds
+hospital bill
+travel expenses
+unable to access
+help me
+urgent help
+financial assistance
+money transfer
+
+# === Multilingual — Portuguese (relevant to dataset) ===
 verificar
 confirmar
 atualizar
@@ -287,3 +524,50 @@ boleto
 pagamento
 fatura
 saldo
+bloqueado
+bloqueio
+desbloqueio
+atenção
+urgente
+aviso importante
+
+# === Multilingual — Spanish ===
+verificar su cuenta
+confirmar identidad
+actualizar información
+contraseña
+seguridad
+cuenta suspendida
+haga clic aquí
+actualice ahora
+transferencia
+factura
+pago pendiente
+urgente
+aviso importante
+
+# === Multilingual — French ===
+vérifier votre compte
+confirmer votre identité
+mot de passe
+sécurité
+compte suspendu
+cliquez ici
+mettre à jour
+virement
+facture
+paiement en attente
+urgent
+avis important
+
+# === Multilingual — German ===
+konto bestätigen
+passwort
+sicherheit
+konto gesperrt
+klicken sie hier
+aktualisieren
+überweisung
+rechnung
+dringend
+wichtige mitteilung

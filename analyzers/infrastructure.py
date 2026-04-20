@@ -28,63 +28,101 @@ _DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def _load_known_domains() -> list[str]:
-    """Load list of known legitimate domains."""
+    """Load list of known legitimate domains (Tranco top sites or fallback)."""
     path = _DATA_DIR / "known_domains.txt"
     if path.exists():
-        return [
+        domains = [
             line.strip().lower()
             for line in path.read_text().splitlines()
             if line.strip() and not line.startswith("#")
         ]
+        if domains:
+            logger.info(f"Loaded {len(domains)} known domains from {path.name}")
+            return domains
+    logger.warning("No known_domains.txt found — typosquatting detection will be limited")
     return []
 
 
+def _load_dangerous_extensions() -> set[str]:
+    """Load dangerous file extensions from badfiles JSON or use fallback."""
+    path = _DATA_DIR / "dangerous_extensions.json"
+    if path.exists():
+        try:
+            import json
+            data = json.loads(path.read_text())
+            exts = set(data.get("extensions", []))
+            if exts:
+                logger.info(f"Loaded {len(exts)} dangerous extensions from {path.name}")
+                return exts
+        except Exception as e:
+            logger.warning(f"Failed to load dangerous_extensions.json: {e}")
+
+    # Fallback to hardcoded set
+    return {
+        ".exe", ".scr", ".bat", ".cmd", ".com", ".pif", ".js",
+        ".vbs", ".wsf", ".msi", ".jar", ".ps1", ".hta", ".cpl",
+        ".lnk", ".reg", ".inf", ".rgs", ".sct", ".wsc", ".wsh",
+        ".docm", ".xlsm", ".pptm", ".dotm", ".xltm",
+    }
+
+
 KNOWN_DOMAINS = _load_known_domains()
+DOUBLE_EXT_DANGEROUS = _load_dangerous_extensions()
 
+# Legitimate platforms commonly abused for hosting phishing content.
+# Sources: URLhaus abuse.ch reports, Google Safe Browsing transparency reports,
+#          Cloudflare phishing threat reports, APWG eCrime research.
 LEGIT_PLATFORMS = {
-    "docs.google.com",
-    "drive.google.com",
-    "sites.google.com",
-    "forms.gle",
-    "docs.google.com",
-    "dropbox.com",
-    "www.dropbox.com",
-    "dl.dropboxusercontent.com",
-    "onedrive.live.com",
-    "1drv.ms",
-    "sharepoint.com",
-    "bit.ly",
-    "tinyurl.com",
-    "t.co",
-    "goo.gl",
-    "rebrand.ly",
-    "is.gd",
-    "cutt.ly",
-    "shorturl.at",
-    "firebase.google.com",
-    "firebasestorage.googleapis.com",
-    "storage.googleapis.com",
-    "s3.amazonaws.com",
-    "blob.core.windows.net",
-    "notion.so",
-    "notion.site",
-    "canva.com",
-    "wix.com",
-    "weebly.com",
-    "wordpress.com",
-    "blogspot.com",
-    "github.io",
-    "pages.dev",
-    "workers.dev",
-    "netlify.app",
-    "vercel.app",
-    "herokuapp.com",
-    "web.app",
-}
-
-DOUBLE_EXT_DANGEROUS = {
-    ".exe", ".scr", ".bat", ".cmd", ".com", ".pif", ".js",
-    ".vbs", ".wsf", ".msi", ".jar", ".ps1", ".hta", ".cpl",
+    # --- Google ---
+    "docs.google.com", "drive.google.com", "sites.google.com",
+    "forms.gle", "forms.google.com",
+    "translate.google.com", "translate.goog",
+    "firebase.google.com", "firebasestorage.googleapis.com",
+    "storage.googleapis.com", "storage.cloud.google.com",
+    "appspot.com", "web.app", "firebaseapp.com",
+    "blogger.com", "blogspot.com",
+    "calendar.google.com",
+    # --- Microsoft ---
+    "onedrive.live.com", "1drv.ms",
+    "sharepoint.com", "sway.office.com", "sway.cloud.microsoft",
+    "blob.core.windows.net", "azurewebsites.net",
+    "azurestaticapps.net", "azure-api.net",
+    "forms.office.com", "login.microsoftonline.com",
+    "my.sharepoint.com", "powerautomate.com",
+    # --- AWS ---
+    "s3.amazonaws.com", "cloudfront.net",
+    "amplifyapp.com", "execute-api.amazonaws.com",
+    "elasticbeanstalk.com",
+    # --- Dropbox ---
+    "dropbox.com", "www.dropbox.com", "dl.dropboxusercontent.com",
+    # --- URL shorteners ---
+    "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly",
+    "rebrand.ly", "is.gd", "cutt.ly", "shorturl.at", "t.ly",
+    "rb.gy", "short.io", "tiny.cc", "lnkd.in", "buff.ly",
+    # --- Website builders ---
+    "wix.com", "weebly.com", "wordpress.com", "squarespace.com",
+    "webflow.io", "carrd.co", "strikingly.com", "site123.com",
+    "jimdosite.com", "godaddysites.com",
+    # --- Developer platforms ---
+    "github.io", "pages.dev", "workers.dev",
+    "netlify.app", "vercel.app", "herokuapp.com",
+    "glitch.me", "replit.co", "render.com",
+    "surge.sh", "fly.dev", "railway.app",
+    # --- Collaboration ---
+    "notion.so", "notion.site", "canva.com",
+    "trello.com", "airtable.com", "typeform.com",
+    "jotform.com", "surveymonkey.com", "google.survey",
+    # --- File sharing ---
+    "sendgrid.net", "mailchimp.com", "sendinblue.com",
+    "wetransfer.com", "box.com", "mediafire.com",
+    "mega.nz", "mega.io",
+    # --- Communication ---
+    "slack.com", "discord.gg", "discord.com",
+    "zoom.us", "teams.microsoft.com",
+    # --- Social / Misc ---
+    "linktr.ee", "bio.link", "beacons.ai",
+    "ipfs.io", "ipfs.dweb.link", "gateway.pinata.cloud",
+    "docs.zoho.com",
 }
 
 # ---------------------------------------------------------------------------
