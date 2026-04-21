@@ -49,13 +49,33 @@ class ParsedEmail:
         self.body_html: str = ""       # Raw HTML
         self.body_raw: str = ""        # Raw body before processing
 
+        # Additional headers for analysis
+        self.reply_to: str = ""
+        self.reply_to_email: str = ""
+        self.reply_to_domain: str = ""
+        self.x_mailer: str = ""
+        self.content_type: str = ""
+        self.mime_version: str = ""
+        self.x_originating_ip: str = ""
+
+        # MIME structure
+        self.mime_parts: int = 0
+        self.mime_max_depth: int = 0
+        self.mime_content_types: list[str] = []
+        self.has_plain_text_part: bool = False
+        self.has_html_part: bool = False
+
         # Extracted data
         self.urls: list[str] = []
         self.url_domains: list[str] = []
         self.attachments: list[dict] = []   # [{filename, content_type, size}]
+        self.image_count: int = 0  # Inline/embedded images
 
         # All headers as dict
         self.headers: dict = {}
+
+        # Raw message object (for MIME analysis)
+        self._msg = None
 
 
 def parse_eml(filepath: str) -> ParsedEmail:
@@ -83,6 +103,19 @@ def parse_eml(filepath: str) -> ParsedEmail:
     parsed.authentication_results = msg.get("Authentication-Results", "")
     parsed.received_spf = msg.get("Received-SPF", "")
     parsed.dkim_signature = msg.get("DKIM-Signature", "")
+    parsed.reply_to = _decode_header(msg.get("Reply-To", ""))
+    parsed.x_mailer = msg.get("X-Mailer", "") or msg.get("User-Agent", "")
+    parsed.content_type = msg.get_content_type()
+    parsed.mime_version = msg.get("MIME-Version", "")
+    parsed.x_originating_ip = msg.get("X-Originating-IP", "")
+    parsed._msg = msg
+
+    # Parse Reply-To
+    if parsed.reply_to:
+        _, rt_addr = parseaddr(parsed.reply_to)
+        parsed.reply_to_email = rt_addr
+        if rt_addr and "@" in rt_addr:
+            parsed.reply_to_domain = rt_addr.split("@")[1].lower()
 
     # Parse From
     display_name, email_addr = parseaddr(parsed.from_header)
@@ -131,6 +164,15 @@ def parse_eml(filepath: str) -> ParsedEmail:
 
     # --- Extract attachments ---
     parsed.attachments = _extract_attachments(msg)
+
+    # --- Analyze MIME structure ---
+    mime_info = _analyze_mime_structure(msg)
+    parsed.mime_parts = mime_info["part_count"]
+    parsed.mime_max_depth = mime_info["max_depth"]
+    parsed.mime_content_types = mime_info["content_types"]
+    parsed.has_plain_text_part = mime_info["has_plain_text"]
+    parsed.has_html_part = mime_info["has_html"]
+    parsed.image_count = mime_info["image_count"]
 
     return parsed
 
@@ -343,3 +385,54 @@ def _extract_attachments(msg: email.message.Message) -> list[dict]:
             })
 
     return attachments
+
+
+def _analyze_mime_structure(msg: email.message.Message) -> dict:
+    """Analyze MIME structure: part count, nesting depth, content types."""
+    result = {
+        "part_count": 0,
+        "max_depth": 0,
+        "content_types": [],
+        "has_plain_text": False,
+        "has_html": False,
+        "image_count": 0,
+    }
+
+    if not msg.is_multipart():
+        result["part_count"] = 1
+        result["max_depth"] = 0
+        ct = msg.get_content_type()
+        result["content_types"] = [ct]
+        result["has_plain_text"] = ct == "text/plain"
+        result["has_html"] = ct == "text/html"
+        return result
+
+    content_types = []
+    image_count = 0
+
+    def _walk_depth(part, depth):
+        nonlocal image_count
+        ct = part.get_content_type()
+        content_types.append(ct)
+        max_d = depth
+
+        if ct.startswith("image/"):
+            image_count += 1
+
+        if part.is_multipart():
+            for sub in part.get_payload():
+                if hasattr(sub, "get_content_type"):
+                    child_d = _walk_depth(sub, depth + 1)
+                    max_d = max(max_d, child_d)
+        return max_d
+
+    max_depth = _walk_depth(msg, 0)
+
+    result["part_count"] = len(content_types)
+    result["max_depth"] = max_depth
+    result["content_types"] = list(set(content_types))
+    result["has_plain_text"] = "text/plain" in content_types
+    result["has_html"] = "text/html" in content_types
+    result["image_count"] = image_count
+
+    return result

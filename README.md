@@ -4,12 +4,13 @@ A Docker-based tool that analyzes `.eml` phishing email files and extracts compr
 
 ## Features
 
-The tool extracts **~75 features** per email across four analysis dimensions:
+The tool extracts **~120 features** per email across five analysis dimensions:
 
-- **Infrastructure** — SPF/DKIM/DMARC authentication, IP blacklist reputation, WHOIS domain age, typosquatting detection, legitimate service abuse, double extension attachments, URL entropy/length/structure
-- **Textual** — stopword ratio, typo count, urgency language, action request phrases, financial/crypto patterns, foreign language detection, character frequency chi-squared, Flesch-Kincaid and Gunning Fog readability scores
-- **Metadata** — sender name-username correlation, brand impersonation detection, phishing keyword coverage, PDF/OCR visual analysis
-- **Structural (Ptech/Ptac)** — HTML tag analysis (forms, inputs, scripts, hidden elements), header anomalies (Return-Path mismatch, excessive hops, scripted mailers), phishing template pattern matching
+- **Infrastructure** — SPF/DKIM/DMARC authentication, IP blacklist reputation, WHOIS domain age, typosquatting detection (against Tranco Top 10K), legitimate service abuse (~100 platforms), double extension attachments (100+ dangerous extensions from badfiles), URL entropy/length/structure
+- **Textual** — stopword ratio, typo count, urgency language (60+ multilingual phrases), action request phrases (70+ multilingual), financial/crypto patterns (40+ keywords), foreign language detection, character frequency chi-squared, Flesch-Kincaid and Gunning Fog readability scores
+- **Metadata** — sender name-username correlation, brand impersonation (90+ brands), phishing keyword coverage (526 keywords), PDF/OCR visual analysis, Ptech/Ptac heuristic (HTML structure, header anomalies, template patterns)
+- **Advanced Headers** — Reply-To vs From mismatch, X-Mailer categorization, Return-Path mismatch, Received hop timing analysis (delays and total transit time)
+- **Advanced Analysis** — temporal features (send hour, day, timezone, business hours), subject line patterns (RE:/FW: abuse, caps ratio, emoji, special chars), obfuscation detection (Unicode homoglyphs, punycode, data: URIs, base64 URLs, zero-width chars, HTML comment injection, invisible text, CSS tricks), structural ratios (HTML-to-text, link-to-word, image-to-text), MIME structure analysis (part count, depth, unusual content types)
 
 ## Quick Start
 

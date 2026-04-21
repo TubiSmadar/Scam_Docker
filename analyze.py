@@ -28,6 +28,7 @@ from analyzers.eml_parser import parse_eml
 from analyzers.infrastructure import run_infrastructure_checks
 from analyzers.textual import run_textual_checks
 from analyzers.metadata import run_metadata_checks
+from analyzers.advanced import run_advanced_checks
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -62,7 +63,10 @@ def analyze_single_email(
         # 4. Run metadata checks
         metadata = run_metadata_checks(parsed, skip_pdf=skip_pdf)
 
-        # 5. Build report with all raw features
+        # 5. Run advanced checks
+        advanced = run_advanced_checks(parsed)
+
+        # 6. Build report with all raw features
         report = {
             "file": filename,
             # --- Email metadata ---
@@ -102,6 +106,13 @@ def analyze_single_email(
             "phishing_words": metadata.get("unused_phishing_words", {}),
             "pdf_ocr": metadata.get("pdf_ocr", {}),
             "ptech_ptac": metadata.get("ptech_ptac", {}),
+            # --- Advanced features ---
+            "header_anomalies": advanced.get("header_anomalies", {}),
+            "temporal": advanced.get("temporal", {}),
+            "subject_line": advanced.get("subject_line", {}),
+            "obfuscation": advanced.get("obfuscation", {}),
+            "structural_ratios": advanced.get("structural_ratios", {}),
+            "mime_structure": advanced.get("mime_structure", {}),
         }
 
         return report
@@ -143,6 +154,13 @@ def write_csv(reports: list, csv_path: Path) -> None:
         pw = r.get("phishing_words", {})
         pdf_ocr = r.get("pdf_ocr", {})
         ptech = r.get("ptech_ptac", {})
+        # Advanced features
+        hdr = r.get("header_anomalies", {})
+        temp = r.get("temporal", {})
+        subj = r.get("subject_line", {})
+        obf = r.get("obfuscation", {})
+        struct = r.get("structural_ratios", {})
+        mime = r.get("mime_structure", {})
 
         rows.append({
             # --- Identity ---
@@ -265,6 +283,77 @@ def write_csv(reports: list, csv_path: Path) -> None:
             "html_form_tags": ptech.get("html_analysis", {}).get("form_tags", 0),
             "html_input_tags": ptech.get("html_analysis", {}).get("input_tags", 0),
             "html_script_tags": ptech.get("html_analysis", {}).get("script_tags", 0),
+
+            # =====================================================
+            # ADVANCED FEATURES
+            # =====================================================
+
+            # --- Header Anomalies ---
+            "has_reply_to": hdr.get("has_reply_to", False),
+            "reply_to_mismatch": hdr.get("reply_to_mismatch", False),
+            "reply_to_domain_mismatch": hdr.get("reply_to_domain_mismatch", False),
+            "x_mailer_category": hdr.get("x_mailer_category", ""),
+            "return_path_mismatch": hdr.get("return_path_mismatch", False),
+            "received_hop_count": hdr.get("received_hop_count", 0),
+            "max_hop_delay_seconds": hdr.get("max_hop_delay_seconds", 0),
+            "total_transit_seconds": hdr.get("total_transit_seconds", 0),
+            "has_x_originating_ip": hdr.get("has_x_originating_ip", False),
+
+            # --- Temporal ---
+            "send_hour_utc": temp.get("send_hour_utc", ""),
+            "send_day_of_week": temp.get("send_day_of_week", ""),
+            "send_day_name": temp.get("send_day_name", ""),
+            "send_timezone_offset": temp.get("send_timezone_offset", ""),
+            "is_business_hours": temp.get("is_business_hours", ""),
+            "is_weekend": temp.get("is_weekend", ""),
+            "is_night": temp.get("is_night", ""),
+            "date_parsed": temp.get("date_parsed", False),
+
+            # --- Subject Line ---
+            "subject_length": subj.get("subject_length", 0),
+            "subject_word_count": subj.get("subject_word_count", 0),
+            "subject_has_re_prefix": subj.get("has_re_prefix", False),
+            "subject_has_fw_prefix": subj.get("has_fw_prefix", False),
+            "subject_re_fw_count": subj.get("re_fw_count", 0),
+            "subject_caps_ratio": subj.get("caps_ratio", 0),
+            "subject_is_all_caps": subj.get("is_all_caps", False),
+            "subject_has_emoji": subj.get("has_emoji", False),
+            "subject_special_char_count": subj.get("special_char_count", 0),
+            "subject_has_exclamation": subj.get("has_exclamation", False),
+            "subject_exclamation_count": subj.get("exclamation_count", 0),
+            "subject_has_question_mark": subj.get("has_question_mark", False),
+            "subject_has_brackets": subj.get("has_brackets", False),
+            "subject_has_dollar_sign": subj.get("has_dollar_sign", False),
+            "subject_has_unicode": subj.get("has_unicode_chars", False),
+
+            # --- Obfuscation ---
+            "homoglyph_count": obf.get("homoglyph_count", 0),
+            "punycode_count": obf.get("punycode_count", 0),
+            "data_uri_count": obf.get("data_uri_count", 0),
+            "base64_url_count": obf.get("base64_url_count", 0),
+            "url_shortener_chain_count": obf.get("url_shortener_chain_count", 0),
+            "hex_encoded_url_count": obf.get("hex_encoded_url_count", 0),
+            "ip_based_url_count": obf.get("ip_based_url_count", 0),
+            "html_comment_injection": obf.get("html_comment_injection", False),
+            "zero_width_chars": obf.get("zero_width_chars", False),
+            "invisible_text": obf.get("invisible_text", False),
+            "css_obfuscation": obf.get("css_obfuscation", False),
+
+            # --- Structural Ratios ---
+            "html_to_text_ratio": struct.get("html_to_text_ratio", 0),
+            "link_to_word_ratio": struct.get("link_to_word_ratio", 0),
+            "image_to_text_ratio": struct.get("image_to_text_ratio", 0),
+            "has_plain_text_alternative": struct.get("has_plain_text_alternative", False),
+            "is_html_only": struct.get("is_html_only", False),
+            "is_text_only": struct.get("is_text_only", False),
+            "inline_image_count": struct.get("inline_image_count", 0),
+
+            # --- MIME Structure ---
+            "mime_part_count": mime.get("mime_part_count", 0),
+            "mime_max_depth": mime.get("mime_max_depth", 0),
+            "mime_unique_content_types": mime.get("mime_unique_content_types", 0),
+            "mime_has_mixed_content": mime.get("has_mixed_content", False),
+            "mime_has_unusual_content_type": mime.get("has_unusual_content_type", False),
         })
 
     if not rows:
