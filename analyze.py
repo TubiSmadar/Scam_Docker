@@ -45,6 +45,7 @@ def analyze_single_email(
     filepath: str,
     skip_pdf: bool = False,
     skip_whois: bool = False,
+    skip_dnsbl: bool = False,
 ) -> dict:
     """Analyze a single .eml file and return all extracted features."""
     filename = Path(filepath).name
@@ -54,8 +55,8 @@ def analyze_single_email(
         # 1. Parse the EML
         parsed = parse_eml(filepath)
 
-        # 2. Run infrastructure checks
-        infra = run_infrastructure_checks(parsed, skip_whois=skip_whois)
+        # 2. Run infrastructure checks (with DNS optimization)
+        infra = run_infrastructure_checks(parsed, skip_whois=skip_whois, skip_dnsbl=skip_dnsbl, use_async_dns=True)
 
         # 3. Run textual checks
         textual = run_textual_checks(parsed)
@@ -401,8 +402,8 @@ def main():
     parser.add_argument(
         "--workers",
         type=int,
-        default=4,
-        help="Number of parallel workers (default: 4)",
+        default=0,
+        help="Number of parallel workers (default: auto-detect CPU count)",
     )
     parser.add_argument(
         "--skip-pdf",
@@ -415,6 +416,11 @@ def main():
         help="Skip WHOIS lookups (faster, avoids rate limits)",
     )
     parser.add_argument(
+        "--no-dnsbl",
+        action="store_true",
+        help="Skip DNS blacklist checks (fastest, loses IP reputation feature)",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -424,6 +430,12 @@ def main():
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Auto-detect workers if not specified
+    import multiprocessing
+    num_workers = args.workers
+    if num_workers <= 0:
+        num_workers = min(multiprocessing.cpu_count(), 16)  # Cap at 16
 
     # Discover files
     eml_files = discover_eml_files(args.input_dir)
@@ -449,17 +461,18 @@ def main():
     errors = 0
 
     logger.info(
-        f"Starting analysis with {args.workers} workers "
-        f"(skip_pdf={args.skip_pdf}, skip_whois={args.skip_whois})"
+        f"Starting analysis with {num_workers} workers "
+        f"(skip_pdf={args.skip_pdf}, skip_whois={args.skip_whois}, skip_dnsbl={args.no_dnsbl})"
     )
 
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
         future_to_file = {
             executor.submit(
                 analyze_single_email,
                 fp,
                 args.skip_pdf,
                 args.skip_whois,
+                args.no_dnsbl,
             ): fp
             for fp in eml_files
         }

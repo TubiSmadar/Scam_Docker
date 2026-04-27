@@ -1,3 +1,4 @@
+# https://github.com/hagezi/dns-blocklists
 """
 Infrastructure / Authentication analyzers:
 - Authentication signatures (DMARC, DKIM, SPF)
@@ -5,18 +6,24 @@ Infrastructure / Authentication analyzers:
 - Sender domain WHOIS
 - Typosquatting link detection
 - Legitimate service abuse
+- VirusTotal evaluation
 - Double extension detection
 - URL analysis (dots, @, subdomains, length, entropy)
 """
 
 import re
+import os
 import math
+import socket
 import logging
+import hashlib
+import time
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
 import dns.resolver
+import requests
 from Levenshtein import distance as levenshtein_distance
 
 logger = logging.getLogger(__name__)
@@ -28,101 +35,63 @@ _DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def _load_known_domains() -> list[str]:
-    """Load list of known legitimate domains (Tranco top sites or fallback)."""
+    """Load list of known legitimate domains."""
     path = _DATA_DIR / "known_domains.txt"
     if path.exists():
-        domains = [
+        return [
             line.strip().lower()
             for line in path.read_text().splitlines()
             if line.strip() and not line.startswith("#")
         ]
-        if domains:
-            logger.info(f"Loaded {len(domains)} known domains from {path.name}")
-            return domains
-    logger.warning("No known_domains.txt found — typosquatting detection will be limited")
     return []
 
 
-def _load_dangerous_extensions() -> set[str]:
-    """Load dangerous file extensions from badfiles JSON or use fallback."""
-    path = _DATA_DIR / "dangerous_extensions.json"
-    if path.exists():
-        try:
-            import json
-            data = json.loads(path.read_text())
-            exts = set(data.get("extensions", []))
-            if exts:
-                logger.info(f"Loaded {len(exts)} dangerous extensions from {path.name}")
-                return exts
-        except Exception as e:
-            logger.warning(f"Failed to load dangerous_extensions.json: {e}")
-
-    # Fallback to hardcoded set
-    return {
-        ".exe", ".scr", ".bat", ".cmd", ".com", ".pif", ".js",
-        ".vbs", ".wsf", ".msi", ".jar", ".ps1", ".hta", ".cpl",
-        ".lnk", ".reg", ".inf", ".rgs", ".sct", ".wsc", ".wsh",
-        ".docm", ".xlsm", ".pptm", ".dotm", ".xltm",
-    }
-
-
 KNOWN_DOMAINS = _load_known_domains()
-DOUBLE_EXT_DANGEROUS = _load_dangerous_extensions()
 
-# Legitimate platforms commonly abused for hosting phishing content.
-# Sources: URLhaus abuse.ch reports, Google Safe Browsing transparency reports,
-#          Cloudflare phishing threat reports, APWG eCrime research.
 LEGIT_PLATFORMS = {
-    # --- Google ---
-    "docs.google.com", "drive.google.com", "sites.google.com",
-    "forms.gle", "forms.google.com",
-    "translate.google.com", "translate.goog",
-    "firebase.google.com", "firebasestorage.googleapis.com",
-    "storage.googleapis.com", "storage.cloud.google.com",
-    "appspot.com", "web.app", "firebaseapp.com",
-    "blogger.com", "blogspot.com",
-    "calendar.google.com",
-    # --- Microsoft ---
-    "onedrive.live.com", "1drv.ms",
-    "sharepoint.com", "sway.office.com", "sway.cloud.microsoft",
-    "blob.core.windows.net", "azurewebsites.net",
-    "azurestaticapps.net", "azure-api.net",
-    "forms.office.com", "login.microsoftonline.com",
-    "my.sharepoint.com", "powerautomate.com",
-    # --- AWS ---
-    "s3.amazonaws.com", "cloudfront.net",
-    "amplifyapp.com", "execute-api.amazonaws.com",
-    "elasticbeanstalk.com",
-    # --- Dropbox ---
-    "dropbox.com", "www.dropbox.com", "dl.dropboxusercontent.com",
-    # --- URL shorteners ---
-    "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly",
-    "rebrand.ly", "is.gd", "cutt.ly", "shorturl.at", "t.ly",
-    "rb.gy", "short.io", "tiny.cc", "lnkd.in", "buff.ly",
-    # --- Website builders ---
-    "wix.com", "weebly.com", "wordpress.com", "squarespace.com",
-    "webflow.io", "carrd.co", "strikingly.com", "site123.com",
-    "jimdosite.com", "godaddysites.com",
-    # --- Developer platforms ---
-    "github.io", "pages.dev", "workers.dev",
-    "netlify.app", "vercel.app", "herokuapp.com",
-    "glitch.me", "replit.co", "render.com",
-    "surge.sh", "fly.dev", "railway.app",
-    # --- Collaboration ---
-    "notion.so", "notion.site", "canva.com",
-    "trello.com", "airtable.com", "typeform.com",
-    "jotform.com", "surveymonkey.com", "google.survey",
-    # --- File sharing ---
-    "sendgrid.net", "mailchimp.com", "sendinblue.com",
-    "wetransfer.com", "box.com", "mediafire.com",
-    "mega.nz", "mega.io",
-    # --- Communication ---
-    "slack.com", "discord.gg", "discord.com",
-    "zoom.us", "teams.microsoft.com",
-    # --- Social / Misc ---
-    "linktr.ee", "bio.link", "beacons.ai",
-    "ipfs.io", "ipfs.dweb.link", "gateway.pinata.cloud",
-    "docs.zoho.com",
+    "docs.google.com",
+    "drive.google.com",
+    "sites.google.com",
+    "forms.gle",
+    "docs.google.com",
+    "dropbox.com",
+    "www.dropbox.com",
+    "dl.dropboxusercontent.com",
+    "onedrive.live.com",
+    "1drv.ms",
+    "sharepoint.com",
+    "bit.ly",
+    "tinyurl.com",
+    "t.co",
+    "goo.gl",
+    "rebrand.ly",
+    "is.gd",
+    "cutt.ly",
+    "shorturl.at",
+    "firebase.google.com",
+    "firebasestorage.googleapis.com",
+    "storage.googleapis.com",
+    "s3.amazonaws.com",
+    "blob.core.windows.net",
+    "notion.so",
+    "notion.site",
+    "canva.com",
+    "wix.com",
+    "weebly.com",
+    "wordpress.com",
+    "blogspot.com",
+    "github.io",
+    "pages.dev",
+    "workers.dev",
+    "netlify.app",
+    "vercel.app",
+    "herokuapp.com",
+    "web.app",
+}
+
+DOUBLE_EXT_DANGEROUS = {
+    ".exe", ".scr", ".bat", ".cmd", ".com", ".pif", ".js",
+    ".vbs", ".wsf", ".msi", ".jar", ".ps1", ".hta", ".cpl",
 }
 
 # ---------------------------------------------------------------------------
@@ -325,7 +294,75 @@ def check_legit_service_abuse(url_domains: list[str]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 6. Double Extension Detection
+# 6. VirusTotal Evaluation
+# ---------------------------------------------------------------------------
+
+VT_API_KEY = os.environ.get("VT_API_KEY", "")
+VT_RATE_LIMIT_DELAY = 15  # seconds between requests (4/min free tier)
+
+
+def check_virustotal(urls: list[str], max_urls: int = 5) -> dict:
+    """Submit URLs to VirusTotal and return scan verdicts."""
+    result = {
+        "available": bool(VT_API_KEY),
+        "scanned": [],
+        "total_malicious": 0,
+        "total_suspicious": 0,
+    }
+
+    if not VT_API_KEY:
+        result["error"] = "VT_API_KEY not set"
+        return result
+
+    headers = {"x-apikey": VT_API_KEY}
+
+    for url in urls[:max_urls]:
+        try:
+            # URL ID is base64url of the URL
+            url_id = hashlib.sha256(url.encode()).hexdigest()
+
+            # Try to get existing report first
+            resp = requests.get(
+                f"https://www.virustotal.com/api/v3/urls/{url_id}",
+                headers=headers,
+                timeout=10,
+            )
+
+            if resp.status_code == 404:
+                # Submit for scanning
+                resp = requests.post(
+                    "https://www.virustotal.com/api/v3/urls",
+                    headers=headers,
+                    data={"url": url},
+                    timeout=10,
+                )
+                time.sleep(VT_RATE_LIMIT_DELAY)
+                continue
+
+            if resp.status_code == 200:
+                data = resp.json().get("data", {}).get("attributes", {})
+                stats = data.get("last_analysis_stats", {})
+                scan_result = {
+                    "url": url[:200],
+                    "malicious": stats.get("malicious", 0),
+                    "suspicious": stats.get("suspicious", 0),
+                    "harmless": stats.get("harmless", 0),
+                    "undetected": stats.get("undetected", 0),
+                }
+                result["scanned"].append(scan_result)
+                result["total_malicious"] += scan_result["malicious"]
+                result["total_suspicious"] += scan_result["suspicious"]
+
+            time.sleep(VT_RATE_LIMIT_DELAY)
+
+        except Exception as e:
+            logger.debug(f"VT error for {url[:80]}: {e}")
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 7. Double Extension Detection
 # ---------------------------------------------------------------------------
 
 def check_double_extensions(attachments: list[dict]) -> dict:
@@ -359,7 +396,7 @@ def check_double_extensions(attachments: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 7. URL Analysis
+# 8. URL Analysis
 # ---------------------------------------------------------------------------
 
 def _shannon_entropy(text: str) -> float:
@@ -458,6 +495,8 @@ def run_infrastructure_checks(parsed_email, skip_whois: bool = False) -> dict:
     results["legit_service_abuse"] = check_legit_service_abuse(
         parsed_email.url_domains
     )
+
+    results["virustotal"] = check_virustotal(parsed_email.urls)
 
     results["double_extensions"] = check_double_extensions(
         parsed_email.attachments
