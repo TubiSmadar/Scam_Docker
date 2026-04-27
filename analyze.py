@@ -181,11 +181,6 @@ def write_csv(reports: list, csv_path: Path) -> None:
             "auth_failed": sigs.get("failed", 0),
             "auth_total": sigs.get("total", 0),
 
-            # --- IP Reputation ---
-            "ip_blacklisted": ip_rep.get("blacklisted", False),
-            "ip_blacklists_hit": len(ip_rep.get("blacklists_hit", [])),
-            "ip_blacklists_checked": ip_rep.get("checked", 0),
-
             # --- WHOIS ---
             "whois_registrar": whois_d.get("registrar", ""),
             "whois_creation_date": whois_d.get("creation_date", ""),

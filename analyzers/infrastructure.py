@@ -150,45 +150,9 @@ def check_signatures(parsed_email) -> dict:
 # 2. IP Reputation
 # ---------------------------------------------------------------------------
 
-DNS_BLACKLISTS = [
-    "zen.spamhaus.org",
-    "multi.surbl.org",
-    "b.barracudacentral.org",
-    "bl.spamcop.net",
-    "dnsbl.sorbs.net",
-]
-
-
 def check_ip_reputation(sender_ip: Optional[str]) -> dict:
-    """Check sender IP against DNS blacklists."""
-    result = {
-        "ip": sender_ip,
-        "blacklisted": False,
-        "blacklists_hit": [],
-        "checked": 0,
-    }
-
-    if not sender_ip:
-        return result
-
-    # Reverse the IP for DNSBL query
-    reversed_ip = ".".join(reversed(sender_ip.split(".")))
-
-    for bl in DNS_BLACKLISTS:
-        query = f"{reversed_ip}.{bl}"
-        try:
-            dns.resolver.resolve(query, "A", lifetime=3)
-            result["blacklisted"] = True
-            result["blacklists_hit"].append(bl)
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer,
-                dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout,
-                dns.exception.DNSException):
-            pass
-        except Exception as e:
-            logger.debug(f"DNSBL check error for {bl}: {e}")
-        result["checked"] += 1
-
-    return result
+    """Return the sender IP for external reputation lookup."""
+    return {"ip": sender_ip}
 
 
 # ---------------------------------------------------------------------------
