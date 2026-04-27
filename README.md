@@ -25,6 +25,60 @@ docker run \
   phishing-stats
 ```
 
+## Mounting Your Email Data
+
+The tool never reads your emails directly after the run — it only produces statistical output files. Your `.eml` files stay on your machine.
+
+**Step 1 — Place your `.eml` files in a folder**, for example:
+
+```
+/home/yourname/emails/        ← your .eml files go here
+/home/yourname/eml-output/    ← results will be written here (create it first)
+```
+
+On Windows the paths look like `C:\Users\yourname\emails`.
+
+**Step 2 — Build the image** (one time only):
+
+```bash
+docker build -t phishing-stats .
+```
+
+**Step 3 — Run the analysis**, replacing the paths with your actual folders:
+
+```bash
+# Linux / macOS
+docker run \
+  -v /home/yourname/emails:/data/email \
+  -v /home/yourname/eml-output:/data/output \
+  phishing-stats
+
+# Windows (Command Prompt)
+docker run ^
+  -v C:\Users\yourname\emails:/data/email ^
+  -v C:\Users\yourname\eml-output:/data/output ^
+  phishing-stats
+
+# Windows (PowerShell)
+docker run `
+  -v C:\Users\yourname\emails:/data/email `
+  -v C:\Users\yourname\eml-output:/data/output `
+  phishing-stats
+```
+
+The `-v` flag mounts a folder from your machine into the container:
+- Left side of `:` — path on **your machine**
+- Right side of `:` — path **inside the container** (do not change these)
+
+**Step 4 — Collect the results** from your output folder:
+
+```
+/home/yourname/eml-output/report.json   ← full nested feature data
+/home/yourname/eml-output/report.csv    ← flat table, one row per email
+```
+
+> **Tip:** For large datasets (tens of thousands of emails), add `--skip-whois --skip-pdf` to skip the slowest steps and get results much faster. See [CLI Options](#cli-options) below.
+
 ## Output
 
 The tool produces two files in the output directory:

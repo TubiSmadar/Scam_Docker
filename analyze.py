@@ -69,13 +69,11 @@ def analyze_single_email(
 
         # 6. Build report with all raw features
         report = {
-            "file": filename,
             # --- Email metadata ---
             "subject": parsed.subject,
             "from_email": parsed.from_email,
             "from_domain": parsed.from_domain,
             "from_display_name": parsed.from_display_name,
-            "to_email": parsed.to_email,
             "date": parsed.date,
             "sender_ip": parsed.sender_ip,
             "num_urls": len(parsed.urls),
@@ -121,7 +119,6 @@ def analyze_single_email(
     except Exception as e:
         logger.error(f"Error analyzing {filename}: {e}")
         return {
-            "file": filename,
             "error": str(e)[:500],
         }
 
@@ -165,12 +162,10 @@ def write_csv(reports: list, csv_path: Path) -> None:
 
         rows.append({
             # --- Identity ---
-            "file": r["file"],
             "subject": r.get("subject", ""),
             "from_email": r.get("from_email", ""),
             "from_domain": r.get("from_domain", ""),
             "from_display_name": r.get("from_display_name", ""),
-            "to_email": r.get("to_email", ""),
             "date": r.get("date", ""),
             "sender_ip": r.get("sender_ip", ""),
             "body_length": r.get("body_length", 0),
@@ -490,7 +485,6 @@ def main():
                 errors += 1
                 logger.error(f"Fatal error on {filepath}: {e}")
                 reports.append({
-                    "file": Path(filepath).name,
                     "error": str(e)[:500],
                 })
 
@@ -506,7 +500,7 @@ def main():
                 )
 
     # Sort reports by filename for consistency
-    reports.sort(key=lambda r: r.get("file", ""))
+    reports.sort(key=lambda r: r.get("subject", ""))
 
     # Write JSON output
     with open(output_path, "w", encoding="utf-8") as f:
