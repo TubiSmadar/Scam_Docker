@@ -72,6 +72,32 @@ def _load_english_freq() -> dict:
 STOPWORDS = _load_stopwords()
 ENGLISH_FREQ = _load_english_freq()
 
+
+def _load_symspell():
+    """Load SymSpell dictionary once at module level."""
+    try:
+        from symspellpy import SymSpell
+        import importlib.resources
+        sym = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+        try:
+            dict_path = str(
+                importlib.resources.files("symspellpy")
+                / "frequency_dictionary_en_82_765.txt"
+            )
+        except Exception:
+            import symspellpy as _sp
+            dict_path = str(
+                Path(_sp.__file__).parent / "frequency_dictionary_en_82_765.txt"
+            )
+        sym.load_dictionary(dict_path, term_index=0, count_index=1)
+        return sym
+    except Exception as e:
+        logger.warning(f"symspellpy init failed: {e}")
+        return None
+
+
+SYMSPELL = _load_symspell()
+
 # ---------------------------------------------------------------------------
 # Urgency keywords/phrases
 # ---------------------------------------------------------------------------
@@ -227,28 +253,9 @@ def count_typos(body_text: str) -> dict:
         "misspelled_samples": [],
     }
 
-    try:
-        from symspellpy import SymSpell
-        import importlib.resources
-
-        sym = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
-        # Use the built-in dictionary — compatible with Python 3.9+
-        try:
-            # Python 3.9+ with importlib.resources
-            dict_path = str(
-                importlib.resources.files("symspellpy")
-                / "frequency_dictionary_en_82_765.txt"
-            )
-        except Exception:
-            # Fallback: locate package directory manually
-            import symspellpy as _sp
-            dict_path = str(
-                Path(_sp.__file__).parent / "frequency_dictionary_en_82_765.txt"
-            )
-        sym.load_dictionary(dict_path, term_index=0, count_index=1)
-    except Exception as e:
-        logger.warning(f"symspellpy init failed: {e}")
-        result["error"] = str(e)[:200]
+    sym = SYMSPELL
+    if sym is None:
+        result["error"] = "symspellpy unavailable"
         return result
 
     # Clean URLs first

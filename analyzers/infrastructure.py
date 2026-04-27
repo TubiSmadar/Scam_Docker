@@ -477,13 +477,22 @@ def analyze_urls(urls: list[str]) -> dict:
 # Runner
 # ---------------------------------------------------------------------------
 
-def run_infrastructure_checks(parsed_email, skip_whois: bool = False) -> dict:
+def run_infrastructure_checks(parsed_email, skip_whois: bool = False, skip_dnsbl: bool = False, use_async_dns: bool = False) -> dict:
     """Run all infrastructure checks on a parsed email."""
     results = {}
 
     results["signatures"] = check_signatures(parsed_email)
 
-    results["ip_reputation"] = check_ip_reputation(parsed_email.sender_ip)
+    if skip_dnsbl:
+        results["ip_reputation"] = {
+            "ip": parsed_email.sender_ip,
+            "blacklisted": False,
+            "blacklists_hit": [],
+            "checked": 0,
+            "skipped": True,
+        }
+    else:
+        results["ip_reputation"] = check_ip_reputation(parsed_email.sender_ip)
 
     if skip_whois:
         results["whois"] = {"skipped": True, "domain": parsed_email.from_domain}
@@ -495,8 +504,6 @@ def run_infrastructure_checks(parsed_email, skip_whois: bool = False) -> dict:
     results["legit_service_abuse"] = check_legit_service_abuse(
         parsed_email.url_domains
     )
-
-    results["virustotal"] = check_virustotal(parsed_email.urls)
 
     results["double_extensions"] = check_double_extensions(
         parsed_email.attachments
