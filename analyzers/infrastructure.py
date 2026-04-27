@@ -2,7 +2,7 @@
 """
 Infrastructure / Authentication analyzers:
 - Authentication signatures (DMARC, DKIM, SPF)
-- IP reputation (DNS blacklists)
+- IP reputation (MISP threat intelligence API)
 - Sender domain WHOIS
 - Typosquatting link detection
 - Legitimate service abuse
@@ -147,46 +147,72 @@ def check_signatures(parsed_email) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 2. IP Reputation
+# 2. IP Reputation (MISP)
 # ---------------------------------------------------------------------------
 
-DNS_BLACKLISTS = [
-    "zen.spamhaus.org",
-    "multi.surbl.org",
-    "b.barracudacentral.org",
-    "bl.spamcop.net",
-    "dnsbl.sorbs.net",
-]
+MISP_URL = os.environ.get("MISP_URL", "").rstrip("/")
+MISP_API_KEY = os.environ.get("MISP_API_KEY", "")
 
 
 def check_ip_reputation(sender_ip: Optional[str]) -> dict:
-    """Check sender IP against DNS blacklists."""
+    """Check sender IP against MISP threat intelligence."""
     result = {
         "ip": sender_ip,
         "blacklisted": False,
         "blacklists_hit": [],
         "checked": 0,
+        "source": "misp",
     }
 
     if not sender_ip:
         return result
 
-    # Reverse the IP for DNSBL query
-    reversed_ip = ".".join(reversed(sender_ip.split(".")))
+    if not MISP_URL or not MISP_API_KEY:
+        result["error"] = "MISP_URL or MISP_API_KEY not set"
+        return result
 
-    for bl in DNS_BLACKLISTS:
-        query = f"{reversed_ip}.{bl}"
-        try:
-            dns.resolver.resolve(query, "A", lifetime=3)
+    headers = {
+        "Authorization": MISP_API_KEY,
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "returnFormat": "json",
+        "type": "ip-src",
+        "value": sender_ip,
+        "limit": 10,
+    }
+
+    try:
+        resp = requests.post(
+            f"{MISP_URL}/attributes/restSearch",
+            headers=headers,
+            json=payload,
+            timeout=10,
+            verify=False,  # allow self-signed certs on internal MISP instances
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        attributes = data.get("response", {}).get("Attribute", [])
+        result["checked"] = 1
+
+        if attributes:
             result["blacklisted"] = True
-            result["blacklists_hit"].append(bl)
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer,
-                dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout,
-                dns.exception.DNSException):
-            pass
-        except Exception as e:
-            logger.debug(f"DNSBL check error for {bl}: {e}")
-        result["checked"] += 1
+            # Collect event tags / threat levels as "blacklists_hit"
+            seen = set()
+            for attr in attributes:
+                event_id = attr.get("event_id", "")
+                tags = [t.get("name", "") for t in attr.get("Tag", [])]
+                label = ", ".join(tags) if tags else f"MISP event {event_id}"
+                if label not in seen:
+                    result["blacklists_hit"].append(label)
+                    seen.add(label)
+
+    except requests.exceptions.RequestException as e:
+        logger.debug(f"MISP lookup error for {sender_ip}: {e}")
+        result["error"] = str(e)[:200]
 
     return result
 
