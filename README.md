@@ -79,21 +79,6 @@ The `-v` flag mounts a folder from your machine into the container:
 
 > **Tip:** For large datasets (tens of thousands of emails), add `--skip-whois --skip-pdf` to skip the slowest steps and get results much faster. See [CLI Options](#cli-options) below.
 
-## MISP Integration (IP Reputation)
-
-IP reputation is checked against a MISP threat intelligence instance. Pass your MISP credentials as environment variables using Docker's `-e` flag:
-
-```bash
-docker run --rm \
-  -v /path/to/emails:/data/email \
-  -v /path/to/output:/data/output \
-  -e MISP_URL=https://your-misp-instance.example.com \
-  -e MISP_API_KEY=your_misp_api_key_here \
-  phishing-stats
-```
-
-If `MISP_URL` or `MISP_API_KEY` are not set, the IP reputation check is skipped gracefully and the field is marked with an error note in the output — all other analysis continues normally.
-
 ## Output
 
 The tool produces two files in the output directory:
